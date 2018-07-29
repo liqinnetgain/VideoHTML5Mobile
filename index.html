@@ -1,28 +1,62 @@
 <html>
   <head>
     <title>Video HTML5 on Desktop on Mobile</title>
+	<!-- Latest compiled and minified CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous"
   </head>
   <body>
-      
-      <table style="background-color: #d3d3d3">
-        <tr>
-          <td>
-              <div id="video" style="display:none;">
+  <div class="row" style="padding:10px">
+	<div class="col-md-12" >
+		<div class="panel panel-primary">
+			<div class="panel-body">
+				<div class="col-md-4" style="background-color: black; height:300px; margin-right:5px;">
+					<div id="video" style="display:none;">
                   <video id="video-source" 
                   src="http://mirrors.standaloneinstaller.com/video-sample/TRA3106.mp4"
                   muted  autoplay playsinline preload="none"
                   style="width:400px; height:300px;">
                 </video>
               </div>
-          </td>
-          <td style="padding-left: 15px; padding-right: 15px;">
-              <h2 id="title"></h2>
-              <p><strong>Is Mobile:</strong> <span id="ismobile"></span></p>
-              <p><strong>Type of Device:</strong> <span id="name"></span></p>
-              <p><strong>Device / Browser Name:</strong> <span id="type"></span></p>
-          </td>
-        </tr>
-      </table>
+				
+				</div>
+				<div class="col-md-7" style="height:300px; padding:2px;" >
+					<div  style="margin-top:15px; margin-left:5px;">
+						<table class="table table-striped">
+							<tbody>
+							  <tr>
+								<td>Mobile: </td>
+								<td id="ismobile"></td>
+							  </tr>
+							  <tr>
+								<td>Type of Device: </td>
+								<td id="type"></td>
+							  </tr>
+							  <tr>
+								<td>Device / Browser Name: </td>
+								<td id="name"></td>
+							  </tr>
+							  <tr>
+								<td>Runs HTML5 Autoplay: </td>
+								<td id="runs-video"></td>
+							  </tr>
+							  <tr>
+								<td>Operation System: </td>
+								<td id="os"></td>
+							  </tr>
+							  <tr>
+								<td>Browser Name: </td>
+								<td id="browser">Only for Mobile</td>
+							  </tr>
+							</tbody>
+						  </table>
+						</div>
+					</div>
+				</div>
+
+			</div>
+		</div>
+	</div>
+  </div>
       
       
       <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script>
@@ -32,39 +66,68 @@
 
         //Fill Device Information
         if(WURFL.is_mobile){
-          $('#ismobile').html('True');
+          $('#ismobile').html('Yes');
         }
         else{
-          $('#ismobile').html('False');
+          $('#ismobile').html('No');
         }
-        $('#type').html(WURFL.complete_device_name);
-        $('#name').html(WURFL.form_factor);
+        $('#name').html(WURFL.complete_device_name);
+        $('#type').html(WURFL.form_factor);
+		
+		if(WURFL.form_factor == "Smartphone"){
+			$('#browser').html(checkBrowser());
+		}
+		
+		if(WURFL.form_factor == "Desktop"){
+			showVideo();
+			if (navigator.appVersion.indexOf("Win")!=-1) $("#os").html('Windows');
+			else if (navigator.appVersion.indexOf("Mac")!=-1) $("#os").html('MacOS');
+			else if (navigator.appVersion.indexOf("X11")!=-1) $("#os").html('UNIX');
+			else if (navigator.appVersion.indexOf("Linux")!=-1) $("#os").html('Linux');
+			else { $("#os").html('Unknown'); }
+		 }
         
         //Check if Device can run HTML5 Video in Muted Autoplay [using HTMLMediaElement.play()]
         //You can read more about that in: https://bitmovin.com/play-not-play-new-autoplay-policies-safari-11-chrome-64/
-        var playPromise = document.getElementById('video-source').play();
+		
+		var playPromise = undefined;
+		playPromise = document.getElementById('video-source').play();
+		
 
         //This code only works on browsers with the HTMLMediaElement.play() function
         //Chrome, Safari and Firefox
-        if(checkBrowser() == 'chrome' || checkBrowser() == 'safari' || checkBrowser() == 'firefox'){
+        if(checkBrowser() == 'Google Chrome' || checkBrowser() == 'Safari' || checkBrowser() == 'Mozilla Firefox'){
 
           if (playPromise !== undefined) {
+		  
             playPromise.then(function() {
+			
+				
+			   //Check UserAgent
+               var userAgent = navigator.userAgent || navigator.vendor || window.opera;
 
               // # Tablets #
               if(WURFL.form_factor == "Tablet"){
-                showVideo(); //Shows Image
+			  
+				if (/android/i.test(userAgent)) {
+					var androidversion = parseFloat(userAgent.slice(userAgent.indexOf("Android")+8));
+					$("#os").html('Android ' + androidversion);
+					showVideo();
+				}
+				else{
+					$("#os").html('Unknown');
+				}
+				
               }
 
               // # Smartphone #
               else if(WURFL.form_factor == "Smartphone"){
 
-                //Check UserAgent
-                var userAgent = navigator.userAgent || navigator.vendor || window.opera;
-
                 // Windows Phone
                 if (/windows phone/i.test(userAgent)) {
-                  dontShowVideo()
+				  $("#name").html('Windows Phone');
+				  $("#os").html('Windows');
+                  dontShowVideo();
                 }
 
                 //IOS
@@ -73,12 +136,14 @@
 
                   var v = (navigator.appVersion).match(/OS (\d+)_(\d+)_?(\d+)?/);
                   var ver = [parseInt(v[1], 10), parseInt(v[2], 10), parseInt(v[3] || 0, 10)];
+				  $("#os").html('IOS ' + ver[0]);
+				  
 
                   if (/iP(hone|od|ad)/.test(navigator.platform)) {
 
                     //Version below 10
                     if(ver[0]<10){
-                      dontShowVideo()
+                      dontShowVideo();
                     }
 
                     //Version above 10
@@ -90,6 +155,10 @@
 
                 //Ipad
                 else if (/iPad/.test(userAgent) && !window.MSStream) {
+					
+					 var v = (navigator.appVersion).match(/OS (\d+)_(\d+)_?(\d+)?/);
+					 var ver = [parseInt(v[1], 10), parseInt(v[2], 10), parseInt(v[3] || 0, 10)];
+					$("#os").html('IOS ' + ver[0]);
 
                   if (/iP(hone|od|ad)/.test(navigator.platform)) {
 
@@ -102,6 +171,9 @@
 
                 //Android
                 else if (/android/i.test(userAgent)) {
+					
+					var androidversion = parseFloat(userAgent.slice(userAgent.indexOf("Android")+8));
+					$("#os").html('Android ' + androidversion);
                   showVideo();
                 }
 
@@ -114,6 +186,11 @@
               // # Desktop #
               else if(WURFL.form_factor == "Desktop"){
                 showVideo();
+				if (navigator.appVersion.indexOf("Win")!=-1) $("#os").html('Windows');
+				else if (navigator.appVersion.indexOf("Mac")!=-1) $("#os").html('MacOS');
+				else if (navigator.appVersion.indexOf("X11")!=-1) $("#os").html('UNIX');
+				else if (navigator.appVersion.indexOf("Linux")!=-1) $("#os").html('Linux');
+				else { $("#os").html('Unknown'); }
               }
 
               // # Unknown Device #
@@ -129,19 +206,17 @@
           }
         }
         else{
-          $('#title').html('This Browser Does not support HTMLMediaElement.play()');
+          $('#runs-video').html('This Browser Does not support HTMLMediaElement.play()');
         }
 
         //Mostra o Vídeo
         function showVideo(){
-            //Changes Title
-            $('#title').html('Vídeo HTML5 Autoplay works <br />on this Device and Browser');
+            $('#runs-video').html('Vídeo HTML5 Autoplay works <br />on this Device and Browser');
             $('#video').show();
         }
 
         function dontShowVideo(){
-          //Changes Title
-          $('#title').html('Vídeo HTML5 Autoplay does not work <br />on this Device and Browser');
+          $('#runs-video').html('Vídeo HTML5 Autoplay does not work <br />on this Device and Browser');
         }
 
         //Mostra a Imagem Novamente ao Encerrar o Vídeo
@@ -151,18 +226,33 @@
         }
 
         function checkBrowser(){
-
+		  isOpera = (navigator.userAgent.match(/Opera|OPR\//) ? true : false);
           isIE = /*@cc_on!@*/false || !!document.documentMode;
           isEdge = !isIE && !!window.StyleMedia;
-          if(navigator.userAgent.indexOf("Chrome") != -1 && !isEdge){
-              return 'chrome';
+          if(navigator.userAgent.indexOf("Chrome") != -1 && !isEdge && !isOpera){
+              return 'Google Chrome';
           }
-          else if(navigator.userAgent.indexOf("Safari") != -1 && !isEdge){
-              return 'safari';
+          else if(navigator.userAgent.indexOf("Safari") != -1 && !isEdge && !isOpera){
+              return 'Safari';
           }
-          else if(navigator.userAgent.indexOf("Firefox") != -1 ){
-              return 'firefox';
+          else if(navigator.userAgent.indexOf("Firefox") != -1 && !isOpera ){
+              return 'Mozilla Firefox';
           }
+		  else if(isOpera){
+			return 'Opera';
+		  }
+		  else if((navigator.userAgent.indexOf("MSIE") != -1 ) || (!!document.documentMode == true )) //IF IE > 10
+			{
+				return 'Internet Explorer';
+			}
+			else if(isEdge)
+			{
+				return 'Edge';
+			}
+			else 
+			{
+			   return 'Unknown	';
+			}
         }
     </script>
   </body>
